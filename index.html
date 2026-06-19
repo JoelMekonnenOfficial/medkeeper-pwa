@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#2563EB" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)" />
+  <meta name="description" content="MedKeeper — privacy-first medication tracker. Doses, reminders, refills, and a doctor-ready report. Your data stays on this device." />
+  <meta name="application-name" content="MedKeeper" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="MedKeeper" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="robots" content="index,follow" />
+
+  <title>MedKeeper — Medication tracker</title>
+
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Screen-reader live region for status changes -->
+  <div id="sr-live" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Skip link -->
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <!-- Lock screen (PIN) -->
+  <section id="lock-screen" class="lock-screen" hidden aria-hidden="true">
+    <div class="lock-card" role="dialog" aria-labelledby="lock-title" aria-modal="true">
+      <div class="lock-logo" aria-hidden="true">
+        <svg viewBox="0 0 64 64" width="56" height="56"><rect width="64" height="64" rx="14" fill="#2563EB"/><rect x="14" y="22" width="36" height="20" rx="10" fill="#fff"/><rect x="32" y="22" width="18" height="20" rx="10" fill="#e2e8f0"/></svg>
+      </div>
+      <h1 id="lock-title">Enter PIN</h1>
+      <p class="muted">Your data stays on this device.</p>
+      <form id="lock-form" novalidate>
+        <label for="lock-pin" class="sr-only">4-digit PIN</label>
+        <input id="lock-pin" type="password" inputmode="numeric" autocomplete="off" pattern="[0-9]{4}" maxlength="4" required aria-describedby="lock-error" />
+        <p id="lock-error" class="error" role="alert" hidden></p>
+        <button type="submit" class="btn btn-primary btn-block">Unlock</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- Onboarding -->
+  <section id="onboarding" class="onboarding" hidden aria-hidden="true">
+    <div class="onboard-frame" role="dialog" aria-labelledby="onb-title" aria-modal="true">
+      <div class="onboard-step" data-step="1">
+        <div class="onboard-art" aria-hidden="true">
+          <svg viewBox="0 0 200 200" width="160" height="160"><rect width="200" height="200" rx="46" fill="#2563EB"/><path d="M60 102 l24 24 l56 -64" stroke="#fff" stroke-width="14" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <h1 id="onb-title">Your data stays on this device</h1>
+        <p>No account. No servers. No tracking. MedKeeper stores everything in your browser — and only on this device.</p>
+        <button class="btn btn-primary btn-block" data-onb-next>Next</button>
+      </div>
+      <div class="onboard-step" data-step="2" hidden>
+        <div class="onboard-art" aria-hidden="true">
+          <svg viewBox="0 0 200 200" width="160" height="160"><rect width="200" height="200" rx="46" fill="#10b981"/><rect x="50" y="92" width="100" height="40" rx="20" fill="#fff"/><rect x="100" y="92" width="50" height="40" rx="20" fill="#e2e8f0"/></svg>
+        </div>
+        <h1>Add your medications</h1>
+        <p>Name, dose, schedule, and any notes. You can edit anything later.</p>
+        <button class="btn btn-primary btn-block" data-onb-next>Next</button>
+      </div>
+      <div class="onboard-step" data-step="3" hidden>
+        <div class="onboard-art" aria-hidden="true">
+          <svg viewBox="0 0 200 200" width="160" height="160"><rect width="200" height="200" rx="46" fill="#f59e0b"/><path d="M70 60 h60 v80 a30 30 0 0 1 -60 0 z" fill="#fff"/><circle cx="100" cy="150" r="8" fill="#f59e0b"/></svg>
+        </div>
+        <h1>Reminders (optional)</h1>
+        <p>We can ping you when a dose is due. You can change this any time in Settings.</p>
+        <div class="onb-row">
+          <button class="btn btn-secondary" data-onb-skip-notif>Maybe later</button>
+          <button class="btn btn-primary" data-onb-enable-notif>Enable reminders</button>
+        </div>
+      </div>
+      <div class="onboard-progress" aria-hidden="true">
+        <span class="dot active"></span><span class="dot"></span><span class="dot"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- App shell -->
+  <header class="app-header" role="banner">
+    <div class="header-row">
+      <div class="brand">
+        <svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#2563EB"/><rect x="7" y="11" width="18" height="10" rx="5" fill="#fff"/><rect x="16" y="11" width="9" height="10" rx="5" fill="#e2e8f0"/></svg>
+        <span class="brand-name">MedKeeper</span>
+      </div>
+      <div class="header-actions">
+        <button id="install-btn" class="btn btn-ghost" hidden aria-label="Install MedKeeper as an app">Install</button>
+        <button id="theme-btn" class="btn btn-icon" aria-label="Toggle color theme" title="Toggle theme">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 4V2m0 20v-2m8-8h2M2 12h2m13.66-5.66l1.41-1.41M4.93 19.07l1.41-1.41M17.66 17.66l1.41 1.41M4.93 4.93l1.41 1.41" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>
+        </button>
+      </div>
+    </div>
+    <div id="install-banner" class="install-banner" hidden>
+      <p>Install MedKeeper for one-tap access and offline use.</p>
+      <div>
+        <button id="install-dismiss" class="btn btn-ghost">Not now</button>
+        <button id="install-accept" class="btn btn-primary">Install</button>
+      </div>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Primary">
+    <button class="tab" role="tab" aria-selected="true" aria-controls="view-today" id="tab-today" data-view="today">Today</button>
+    <button class="tab" role="tab" aria-selected="false" aria-controls="view-meds" id="tab-meds" data-view="meds">Meds</button>
+    <button class="tab" role="tab" aria-selected="false" aria-controls="view-history" id="tab-history" data-view="history">History</button>
+    <button class="tab" role="tab" aria-selected="false" aria-controls="view-settings" id="tab-settings" data-view="settings">Settings</button>
+  </nav>
+
+  <main id="main" class="app-main" tabindex="-1">
+
+    <!-- Loading state -->
+    <div id="app-loading" class="state loading-state" hidden>
+      <div class="spinner" aria-hidden="true"></div>
+      <p>Loading your data…</p>
+    </div>
+
+    <!-- Error state -->
+    <div id="app-error" class="state error-state" hidden role="alert">
+      <h2>Something went wrong</h2>
+      <p id="app-error-message">We couldn't load your medications. You can try again.</p>
+      <button id="app-error-retry" class="btn btn-primary">Retry</button>
+    </div>
+
+    <!-- TODAY VIEW -->
+    <section id="view-today" class="view" role="tabpanel" aria-labelledby="tab-today">
+      <div class="view-head">
+        <h1 id="today-title">Today</h1>
+        <p id="today-date" class="muted"></p>
+      </div>
+      <div id="today-empty" class="empty" hidden>
+        <h2>No medications yet</h2>
+        <p>Add your first medication to start tracking doses, reminders, and refills.</p>
+        <button class="btn btn-primary" data-action="add-med">Add medication</button>
+      </div>
+      <ol id="today-list" class="dose-list" aria-label="Doses for today"></ol>
+      <div id="today-summary" class="summary-card" hidden>
+        <h2>7-day adherence</h2>
+        <p id="today-adherence">—</p>
+      </div>
+    </section>
+
+    <!-- MEDS VIEW -->
+    <section id="view-meds" class="view" role="tabpanel" aria-labelledby="tab-meds" hidden>
+      <div class="view-head">
+        <h1>Medications</h1>
+        <button class="btn btn-primary" data-action="add-med" aria-label="Add a new medication">+ Add</button>
+      </div>
+      <div id="meds-empty" class="empty" hidden>
+        <h2>No medications yet</h2>
+        <p>Add a medication to get started.</p>
+        <button class="btn btn-primary" data-action="add-med">Add medication</button>
+      </div>
+      <ul id="meds-list" class="med-list" aria-label="Your medications"></ul>
+    </section>
+
+    <!-- HISTORY VIEW -->
+    <section id="view-history" class="view" role="tabpanel" aria-labelledby="tab-history" hidden>
+      <div class="view-head">
+        <h1>History</h1>
+        <div class="seg" role="radiogroup" aria-label="Range">
+          <button class="seg-btn" role="radio" aria-checked="true" data-range="7">7d</button>
+          <button class="seg-btn" role="radio" aria-checked="false" data-range="30">30d</button>
+          <button class="seg-btn" role="radio" aria-checked="false" data-range="90">90d</button>
+        </div>
+      </div>
+      <div id="history-empty" class="empty" hidden>
+        <h2>No history yet</h2>
+        <p>Log a dose to see your adherence here.</p>
+      </div>
+      <div id="history-stats" class="stats-grid"></div>
+      <h2 class="section-h">Heatmap</h2>
+      <div id="history-heatmap" class="heatmap" aria-label="Adherence heatmap"></div>
+      <div id="history-day-panel" class="day-panel" hidden>
+        <h3 id="history-day-title">Doses</h3>
+        <ul id="history-day-list"></ul>
+      </div>
+      <div class="actions-row">
+        <button id="export-pdf" class="btn btn-primary">Doctor report (PDF)</button>
+      </div>
+    </section>
+
+    <!-- SETTINGS VIEW -->
+    <section id="view-settings" class="view" role="tabpanel" aria-labelledby="tab-settings" hidden>
+      <div class="view-head">
+        <h1>Settings</h1>
+      </div>
+
+      <div class="card">
+        <h2>Meal times</h2>
+        <p class="muted">Used by &ldquo;with meals&rdquo; schedules.</p>
+        <div class="grid-3">
+          <label>Breakfast<input type="time" id="meal-breakfast" /></label>
+          <label>Lunch<input type="time" id="meal-lunch" /></label>
+          <label>Dinner<input type="time" id="meal-dinner" /></label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Reminders</h2>
+        <label class="check"><input type="checkbox" id="set-notifications" /> Enable dose reminders</label>
+        <label>Default lead time
+          <select id="set-leadtime">
+            <option value="0">At dose time</option>
+            <option value="5">5 minutes before</option>
+            <option value="15">15 minutes before</option>
+            <option value="30">30 minutes before</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="card">
+        <h2>Display</h2>
+        <label>Color theme
+          <select id="set-theme">
+            <option value="auto">Auto (system)</option>
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select>
+        </label>
+        <label class="check"><input type="checkbox" id="set-largetext" /> Larger text</label>
+      </div>
+
+      <div class="card">
+        <h2>PIN lock</h2>
+        <p class="muted">Optional 4-digit PIN. Hashed locally with Web Crypto (SHA-256).</p>
+        <div id="pin-set-row">
+          <label>New PIN
+            <input type="password" id="set-pin" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" />
+          </label>
+          <button id="set-pin-save" class="btn btn-primary">Set PIN</button>
+        </div>
+        <div id="pin-clear-row" hidden>
+          <p>PIN lock is on.</p>
+          <button id="set-pin-clear" class="btn btn-secondary">Remove PIN</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Data</h2>
+        <p class="muted">Export a JSON backup or import from a previous export. Sharing uses your device's share sheet.</p>
+        <div class="actions-row">
+          <button id="data-export" class="btn btn-secondary">Export backup</button>
+          <button id="data-share" class="btn btn-secondary">Share schedule</button>
+          <button id="data-import" class="btn btn-secondary">Import backup</button>
+          <input type="file" id="data-import-file" accept="application/json" hidden />
+          <button id="data-clear" class="btn btn-danger">Clear all data</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>About</h2>
+        <p><strong>MedKeeper v1.0</strong> — privacy-first medication tracker.</p>
+        <p class="disclaimer">This app is for personal tracking only. It is not medical advice and is not a substitute for the judgment of a licensed clinician. Always confirm dosing with your prescriber or pharmacist.</p>
+        <p><a href="PRIVACY.md" target="_blank" rel="noopener">Privacy policy</a></p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Add/Edit medication dialog -->
+  <dialog id="med-dialog" class="dialog" aria-labelledby="med-dialog-title">
+    <form id="med-form" method="dialog" novalidate>
+      <header class="dialog-head">
+        <h2 id="med-dialog-title">Add medication</h2>
+        <button type="button" class="btn btn-icon" data-close-dialog aria-label="Close">
+          <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </header>
+      <div class="dialog-body">
+        <input type="hidden" id="med-id" />
+        <label>Name <span class="req" aria-hidden="true">*</span>
+          <input type="text" id="med-name" required maxlength="80" autocomplete="off" />
+          <span class="field-error" data-for="med-name" aria-live="polite"></span>
+        </label>
+
+        <div class="row-2">
+          <label>Dose <span class="req" aria-hidden="true">*</span>
+            <input type="number" id="med-dose" required min="0" step="any" inputmode="decimal" />
+          </label>
+          <label>Unit
+            <select id="med-unit">
+              <option>mg</option><option>mcg</option><option>g</option>
+              <option>ml</option><option>pill</option><option>tablet</option>
+              <option>capsule</option><option>drop</option><option>patch</option>
+              <option>puff</option><option>spray</option><option>unit</option>
+            </select>
+          </label>
+        </div>
+
+        <fieldset>
+          <legend>Color and shape</legend>
+          <div id="color-row" class="color-row" role="radiogroup" aria-label="Color"></div>
+          <div id="shape-row" class="shape-row" role="radiogroup" aria-label="Shape"></div>
+        </fieldset>
+
+        <label>Prescribed by
+          <input type="text" id="med-prescriber" maxlength="80" autocomplete="off" />
+        </label>
+
+        <div class="row-2">
+          <label>Start date
+            <input type="date" id="med-start" />
+          </label>
+          <label>End date
+            <input type="date" id="med-end" />
+          </label>
+        </div>
+
+        <div class="row-2">
+          <label>Refill amount (pills/units)
+            <input type="number" id="med-supply" min="0" step="1" inputmode="numeric" />
+          </label>
+          <label>Per-dose units
+            <input type="number" id="med-perdose" min="1" step="1" value="1" inputmode="numeric" />
+          </label>
+        </div>
+
+        <label>Notes
+          <textarea id="med-notes" rows="2" maxlength="240" placeholder="e.g. take with food"></textarea>
+        </label>
+
+        <fieldset>
+          <legend>Schedule</legend>
+          <div class="seg" role="radiogroup" aria-label="Schedule type">
+            <button type="button" class="seg-btn" role="radio" aria-checked="true" data-schedule="fixed">Fixed times</button>
+            <button type="button" class="seg-btn" role="radio" aria-checked="false" data-schedule="interval">Interval</button>
+            <button type="button" class="seg-btn" role="radio" aria-checked="false" data-schedule="meals">With meals</button>
+            <button type="button" class="seg-btn" role="radio" aria-checked="false" data-schedule="prn">As needed</button>
+          </div>
+
+          <div class="sched-panel" data-panel="fixed">
+            <label>Times (one per slot)</label>
+            <div id="fixed-times" class="time-list"></div>
+            <button type="button" id="fixed-add" class="btn btn-secondary btn-small">+ Add time</button>
+          </div>
+          <div class="sched-panel" data-panel="interval" hidden>
+            <label>Every how many hours?
+              <input type="number" id="interval-hours" min="1" max="48" step="1" value="8" />
+            </label>
+            <label>First dose at
+              <input type="time" id="interval-start" value="08:00" />
+            </label>
+          </div>
+          <div class="sched-panel" data-panel="meals" hidden>
+            <label class="check"><input type="checkbox" data-meal="breakfast" /> Breakfast</label>
+            <label class="check"><input type="checkbox" data-meal="lunch" /> Lunch</label>
+            <label class="check"><input type="checkbox" data-meal="dinner" /> Dinner</label>
+            <p class="muted">Meal times are set in Settings.</p>
+          </div>
+          <div class="sched-panel" data-panel="prn" hidden>
+            <label>Minimum interval between doses (hours)
+              <input type="number" id="prn-min" min="0" step="0.5" value="4" />
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Missed dose rule</legend>
+          <label><input type="radio" name="missed" value="skip" checked /> Skip and continue</label>
+          <label><input type="radio" name="missed" value="asap" /> Take ASAP if within
+            <input type="number" id="missed-asap-hours" min="0.5" step="0.5" value="2" style="width:5em;" /> hours
+          </label>
+          <label><input type="radio" name="missed" value="never-double" /> Never double up</label>
+          <label><input type="radio" name="missed" value="contact" /> Contact prescriber</label>
+        </fieldset>
+
+        <p id="night-warn" class="warn" hidden>Heads up: scheduling between 11pm and 6am may interrupt sleep.</p>
+
+        <p class="form-error" id="med-form-error" role="alert" hidden></p>
+      </div>
+      <footer class="dialog-foot">
+        <button type="button" class="btn btn-secondary" data-close-dialog>Cancel</button>
+        <button type="button" id="med-delete" class="btn btn-danger" hidden>Delete</button>
+        <button type="submit" class="btn btn-primary">Save medication</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- Confirm dialog -->
+  <dialog id="confirm-dialog" class="dialog dialog-small" aria-labelledby="confirm-title">
+    <form method="dialog">
+      <h2 id="confirm-title">Are you sure?</h2>
+      <p id="confirm-body"></p>
+      <div class="dialog-foot">
+        <button type="button" class="btn btn-secondary" id="confirm-cancel">Cancel</button>
+        <button type="button" class="btn btn-danger" id="confirm-ok">Confirm</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Toast -->
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <!-- Scripts: load DB first, then schedule/notifications, then UI/PDF, then app -->
+  <script src="db.js" defer></script>
+  <script src="schedule.js" defer></script>
+  <script src="notifications.js" defer></script>
+  <script src="pdf.js" defer></script>
+  <script src="ui.js" defer></script>
+  <script src="app.js" defer></script>
+</body>
+</html>
