@@ -4,7 +4,7 @@
  * - Notification click handler focuses the app.
  * - periodicSync handler (where supported) nudges the page to recompute reminders.
  */
-const CACHE = 'medkeeper-v1.0.1';
+const CACHE = 'medkeeper-v1.0.2';
 
 const ASSETS = [
   './',
