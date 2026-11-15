@@ -666,3 +666,6 @@ fieldset legend { font-weight: 700; padding: 0 6px; }
   h1 { font-size: 1.9rem; }
   .app-main { padding: 22px var(--pad) 80px; }
 }
+
+/* Fix: the hidden attribute must always win over display rules (lock screen, dialogs and empty states were showing when they should not). */
+[hidden] { display: none !important; }
