@@ -155,6 +155,13 @@
       if (state.selectedView === 'today') renderToday();
     }, 30 * 1000);
 
+    // Refresh reminders whenever the app comes back to the front
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        window.MK_NOTIF.reschedule(state.meds, state.settings, state.logs).catch(() => {});
+      }
+    });
+
     // SW message channel
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.addEventListener('message', (ev) => {
@@ -585,11 +592,9 @@
       return;
     }
     const fireAt = Date.now() + 15 * MIN;
-    setTimeout(() => {
-      window.MK_NOTIF.fireNotification('Snoozed: ' + med.name,
-        (med.dose || '') + ' ' + (med.unit || ''),
-        'snooze-' + med.id + '-' + slot.scheduledAt.getTime());
-    }, 15 * MIN);
+    window.MK_NOTIF.scheduleOnce('Snoozed: ' + med.name,
+      (med.dose || '') + ' ' + (med.unit || ''),
+      'snooze-' + med.id + '-' + slot.scheduledAt.getTime(), fireAt);
     window.MK_UI.toast('Snoozed 15 minutes');
     window.MK_UI.announce('Snoozed ' + med.name + ' for 15 minutes');
     try { navigator.vibrate && navigator.vibrate(20); } catch (_) {}
